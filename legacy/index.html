@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator komponentów mebla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0F2436;
+    --bg-panel:#15304A;
+    --bg-panel-2:#1B3A59;
+    --grid-line:#2A5573;
+    --line:#3E6E8E;
+    --accent:#FF7A45;
+    --accent-dim:#B9542A;
+    --cyan:#7FDBFF;
+    --text:#EAF3FB;
+    --text-dim:#9FB8CC;
+    --text-faint:#5F86A3;
+    --danger:#F0997B;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:1280px;
+    margin:0 auto;
+    padding:32px 24px 80px;
+  }
+  header{
+    margin-bottom:28px;
+    border-bottom:1px solid var(--grid-line);
+    padding-bottom:20px;
+  }
+  header .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 8px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:clamp(24px,3.2vw,34px);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    color:var(--text-dim);
+    margin:0;
+    font-size:14px;
+    max-width:640px;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr;}
+  }
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--grid-line);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .panel + .panel{margin-top:20px;}
+  .panel h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h2 .num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    border-radius:4px;
+    padding:1px 6px;
+  }
+  form{position:sticky; top:24px;}
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .field .hint{
+    font-size:11px;
+    color:var(--text-faint);
+    margin-top:4px;
+  }
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  input[type="number"], select{
+    width:100%;
+    background:var(--bg-panel-2);
+    border:1px solid var(--grid-line);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    padding:9px 10px;
+    border-radius:6px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  select{font-family:'Inter',sans-serif; font-size:13.5px;}
+  input[type="number"]:focus, select:focus{
+    border-color:var(--accent);
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:2px;
+  }
+  .toggle-group{display:flex; flex-wrap:wrap; gap:6px;}
+  .toggle-group button{
+    flex:1 1 auto;
+    background:var(--bg-panel-2);
+    border:1px solid var(--grid-line);
+    color:var(--text-dim);
+    font-size:12.5px;
+    font-family:'Inter',sans-serif;
+    padding:8px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:all .15s;
+    white-space:nowrap;
+  }
+  .toggle-group button.active{
+    background:rgba(255,122,69,0.12);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  .toggle-group button:hover:not(.active){
+    border-color:var(--line);
+    color:var(--text);
+  }
+  .error-msg{
+    display:none;
+    font-size:12px;
+    color:var(--danger);
+    margin-top:6px;
+  }
+  .error-msg.show{display:block;}
+  .canvas-panel{min-height:420px;}
+  .canvas-wrap{
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/24px 24px,
+      var(--bg-panel-2);
+    border:1px solid var(--grid-line);
+    border-radius:8px;
+    opacity:0.98;
+    padding:12px;
+  }
+  .canvas-wrap svg{display:block; width:100%; height:auto;}
+  .legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-top:12px;
+    font-size:11.5px;
+    color:var(--text-dim);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend .swatch{width:12px; height:12px; border-radius:2px; display:inline-block;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    margin-top:4px;
+  }
+  thead th{
+    text-align:left;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    padding:0 10px 10px;
+    border-bottom:1px solid var(--grid-line);
+    font-weight:500;
+  }
+  tbody td{
+    padding:11px 10px;
+    border-bottom:1px solid rgba(62,110,142,0.35);
+    color:var(--text);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  td.mono, th.mono{font-family:'JetBrains Mono',monospace;}
+  td.qty{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--accent);
+    font-weight:700;
+    text-align:right;
+  }
+  .summary-bar{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .summary-bar .stat{
+    background:var(--bg-panel-2);
+    border:1px solid var(--grid-line);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .summary-bar .stat .v{
+    font-family:'JetBrains Mono',monospace;
+    font-size:20px;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .summary-bar .stat .l{
+    font-size:11.5px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+  .note{
+    font-size:12px;
+    color:var(--text-faint);
+    margin-top:14px;
+    border-left:2px solid var(--accent-dim);
+    padding-left:10px;
+  }
+  .warn-msg{
+    display:none;
+    margin-top:8px;
+    padding:8px 10px;
+    border-radius:6px;
+    background:rgba(255,122,69,0.12);
+    border:1px solid var(--accent-dim);
+    color:var(--accent);
+    font-size:12.5px;
+    line-height:1.45;
+  }
+  .warn-msg.show{display:block;}
+  .persist-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  .persist-row button{
+    background:var(--bg-panel-2);
+    border:1px solid var(--grid-line);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:500;
+    padding:7px 10px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .persist-row button:hover{border-color:var(--cyan); color:var(--cyan);}
+  .toggle-group button:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+  }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Rysunek techniczny // rozkrój // lokalnie</p>
+    <h1>Kalkulator komponentów mebla</h1>
+    <p>Podaj wymiary całości, a narzędzie rozłoży je na płyty do wycięcia — z rysunkiem poglądowym i listą rozkroju. Działa z dysku (bez serwera); projekt zapisuj przez Eksport JSON.</p>
+  </header>
+
+  <div class="layout">
+    <div>
+      <form class="panel" id="form" onsubmit="return false;">
+        <div class="field">
+          <label>Tryb planowania</label>
+          <div class="toggle-group" id="modeGroup">
+            <button type="button" data-val="single" class="active">Pojedynczy mebel</button>
+            <button type="button" data-val="zabudowa">Cała zabudowa (z powierzchni)</button>
+          </div>
+        </div>
+
+        <h2><span class="num">01</span>Wymiary całości</h2>
+        <div class="field">
+          <div class="row3">
+            <div id="widthField">
+              <label for="w" id="wLabel">Szer. (cm)</label>
+              <input type="number" id="w" value="60" min="10" max="400" step="0.5">
+            </div>
+            <div>
+              <label for="h">Wys. (cm)</label>
+              <input type="number" id="h" value="45" min="10" max="300" step="0.5">
+            </div>
+            <div>
+              <label for="d">Głęb. (cm)</label>
+              <input type="number" id="d" value="30" min="10" max="100" step="0.5">
+            </div>
+          </div>
+          <div class="error-msg" id="dimError">Wszystkie wymiary muszą być liczbami większymi od 0.</div>
+          <div class="warn-msg" id="dimWarn"></div>
+        </div>
+
+        <div class="field" id="typeField">
+          <label>Typ mebla</label>
+          <div class="toggle-group" id="typeGroup">
+            <button type="button" data-val="wiszaca" class="active">Wisząca</button>
+            <button type="button" data-val="stojaca">Stojąca</button>
+            <button type="button" data-val="regal">Regał otw.</button>
+            <button type="button" data-val="naroznik">Narożna</button>
+          </div>
+        </div>
+
+        <div class="field" id="zabudowaFields" style="display:none;">
+          <label>Wstępny wygląd zabudowy</label>
+          <div class="toggle-group" id="layoutGroup">
+            <button type="button" data-val="wiszaca" class="active">Rząd wiszących</button>
+            <button type="button" data-val="stojaca">Rząd stojących</button>
+            <button type="button" data-val="rzad_naroznik">Rząd + narożna</button>
+          </div>
+          <div class="field" style="margin-top:12px; margin-bottom:0;">
+            <label for="modWidth">Preferowana szer. modułu (cm)</label>
+            <input type="number" id="modWidth" value="60" min="30" max="150" step="1">
+          </div>
+          <div class="hint">System sam dobierze liczbę i dokładną szerokość szafek tak, żeby wypełnić dostępną szerokość z pola „Dostępna szer.” powyżej.</div>
+        </div>
+
+        <div class="field" id="cornerFields" style="display:none;">
+          <div class="row2">
+            <div>
+              <label for="armA">Ramię A (cm)</label>
+              <input type="number" id="armA" value="60" min="15" max="200" step="0.5">
+            </div>
+            <div>
+              <label for="armB">Ramię B (cm)</label>
+              <input type="number" id="armB" value="60" min="15" max="200" step="0.5">
+            </div>
+          </div>
+          <div class="hint">Długości mierzone od wewnętrznego narożnika wzdłuż każdej ściany. Głębokość (wspólna) — pole „Głęb.” powyżej.</div>
+        </div>
+
+        <h2 style="margin-top:22px;"><span class="num">02</span>Podział wewnętrzny</h2>
+        <div class="row2" id="sectionsRow">
+          <div class="field" id="sectionsField">
+            <label for="sections">Sekcje (moduły)</label>
+            <input type="number" id="sections" value="1" min="1" max="6" step="1">
+          </div>
+          <div class="field">
+            <label for="shelves">Półki / sekcję (ramię)</label>
+            <input type="number" id="shelves" value="0" min="0" max="8" step="1">
+          </div>
+        </div>
+
+        <h2 style="margin-top:6px;"><span class="num">03</span>Drzwi</h2>
+        <div class="field">
+          <div class="toggle-group" id="doorGroup">
+            <button type="button" data-val="brak">Brak</button>
+            <button type="button" data-val="uchylne" class="active">Uchylne (bok)</button>
+            <button type="button" data-val="gora">Uchylne do góry</button>
+            <button type="button" data-val="przesuwne">Przesuwne</button>
+          </div>
+        </div>
+        <div class="field" id="leavesField">
+          <label>Skrzydła / sekcję</label>
+          <div class="toggle-group" id="leavesGroup">
+            <button type="button" data-val="1" class="active">1 skrzydło</button>
+            <button type="button" data-val="2">2 skrzydła</button>
+          </div>
+          <div class="hint" id="slidingHint" style="display:none;">Drzwi przesuwne: zawsze 2 skrzydła z nakładką ok. 25 mm; wysokość pomniejszona o luz pod prowadnicę (5 mm).</div>
+        </div>
+
+        <h2 style="margin-top:6px;"><span class="num">04</span>Materiał</h2>
+        <div class="row2">
+          <div class="field">
+            <label for="thick">Płyta (mm)</label>
+            <input type="number" id="thick" value="18" min="8" max="40" step="1">
+          </div>
+          <div class="field">
+            <label for="back">Plecy HDF (mm)</label>
+            <input type="number" id="back" value="3" min="2" max="18" step="0.5">
+          </div>
+        </div>
+
+        <h2 style="margin-top:6px;"><span class="num">05</span>Montaż na płycie</h2>
+        <div class="field" id="panelToggleField">
+          <div class="toggle-group" id="panelGroup">
+            <button type="button" data-val="0" class="active">Zwykłe plecy</button>
+            <button type="button" data-val="1">Na wysokiej płycie</button>
+          </div>
+          <div class="hint">Szafka osadzona tylko w górnej części wysokiej płyty montażowej — reszta płyty zostaje odsłonięta poniżej.</div>
+        </div>
+        <div class="row2" id="panelFields" style="display:none;">
+          <div class="field">
+            <label for="panelHeight">Wys. całej płyty (cm)</label>
+            <input type="number" id="panelHeight" value="120" min="10" max="300" step="0.5">
+          </div>
+          <div class="field">
+            <label for="panelThick">Grubość płyty (mm)</label>
+            <input type="number" id="panelThick" value="18" min="8" max="40" step="1">
+          </div>
+        </div>
+
+        <div class="note">Rozkrój orientacyjny — luzy montażowe (ok. 1–2 mm) i typ okuć warto zweryfikować przed cięciem.</div>
+        <div class="persist-row">
+          <button type="button" id="btnExportJson">Eksport JSON</button>
+          <button type="button" id="btnImportJson">Import JSON</button>
+          <button type="button" id="btnCopyLink" title="Kopiuje adres z parametrami (przydatne rzadziej przy pliku lokalnym)">Kopiuj link</button>
+          <input type="file" id="importFile" accept="application/json,.json" class="sr-only">
+        </div>
+        <div class="hint" id="persistStatus" style="margin-top:8px;">Zalecane: Eksport/Import JSON — działa w pełni offline, bez serwera.</div>
+      </form>
+    </div>
+
+    <div>
+      <div class="panel canvas-panel">
+        <h2><span class="num">06</span>Widok mebla</h2>
+        <div class="note" id="zabudowaNote" style="display:none; margin-top:0; margin-bottom:12px;"></div>
+        <div class="canvas-wrap">
+          <div id="svgHost"></div>
+        </div>
+        <div class="legend" id="legend">
+          <span><span class="swatch" style="background:#3E6E8E;"></span>Korpus (boki / wieńce)</span>
+          <span><span class="swatch" style="background:var(--accent);"></span>Front / drzwi</span>
+          <span><span class="swatch" style="background:#7FDBFF;"></span>Wymiar</span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <h2 style="display:flex; justify-content:space-between; align-items:center;">
+          <span><span class="num">07</span>Lista rozkroju</span>
+          <button type="button" id="pdfBtn" style="background:var(--accent); color:#1a1005; border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:6px; cursor:pointer;">Pobierz PDF dla stolarni</button>
+        </h2>
+        <div class="error-msg" id="pdfStatus" style="margin-bottom:10px;"></div>
+        <div class="summary-bar" id="summaryBar"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th class="mono">Szer. × wys. (mm)</th>
+              <th class="mono">Grubość</th>
+              <th class="qty">Ilość</th>
+            </tr>
+          </thead>
+          <tbody id="partsBody"></tbody>
+        </table>
+        <div class="note">PDF zawiera pełną listę rozkroju oraz rysunki płyt z zaznaczonymi miejscami wiercenia pod wkręty (boki, słupki narożne, plecy).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { mode:'single', type:'wiszaca', layout:'wiszaca', door:'uchylne', leaves:1, panel:0 };
+
+function bindToggle(groupId, key, onChange){
+  const group = document.getElementById(groupId);
+  group.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      group.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      state[key] = isNaN(btn.dataset.val) ? btn.dataset.val : Number(btn.dataset.val);
+      if(onChange) onChange();
+      render();
+    });
+  });
+}
+function updateFormUI(){
+  const single = state.mode === 'single';
+  const isCornerSingle = single && state.type === 'naroznik';
+  const isCornerZabudowa = !single && state.layout === 'rzad_naroznik';
+  const hidePanel = isCornerSingle || isCornerZabudowa;
+
+  document.getElementById('typeField').style.display = single ? 'block' : 'none';
+  document.getElementById('zabudowaFields').style.display = single ? 'none' : 'block';
+  document.getElementById('cornerFields').style.display = isCornerSingle ? 'block' : 'none';
+  document.getElementById('widthField').style.display = isCornerSingle ? 'none' : 'block';
+  document.getElementById('sectionsField').style.display = (single && !isCornerSingle) ? 'block' : 'none';
+  document.getElementById('wLabel').textContent = single ? 'Szer. (cm)' : 'Dostępna szer. (cm)';
+
+  document.getElementById('panelToggleField').style.display = hidePanel ? 'none' : 'block';
+  document.getElementById('panelFields').style.display = (!hidePanel && state.panel) ? 'grid' : 'none';
+  if(hidePanel) state.panel = 0;
+}
+bindToggle('modeGroup','mode', updateFormUI);
+bindToggle('typeGroup','type', updateFormUI);
+bindToggle('layoutGroup','layout', updateFormUI);
+bindToggle('doorGroup','door', ()=>{
+  updateDoorLeavesUI();
+});
+bindToggle('leavesGroup','leaves');
+bindToggle('panelGroup','panel', ()=>{
+  document.getElementById('panelFields').style.display = state.panel ? 'grid' : 'none';
+});
+
+['w','h','d','sections','shelves','thick','back','armA','armB','panelHeight','panelThick','modWidth'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+});
+
+function fmt(n){
+  return (Math.round(n*10)/10).toString().replace('.',',');
+}
+
+function makePartsMap(){
+  const partsMap = {};
+  function addPart(name, wCm, hCm, thickMm, qty){
+    const key = name+'|'+wCm.toFixed(1)+'|'+hCm.toFixed(1)+'|'+thickMm;
+    if(!partsMap[key]) partsMap[key] = {name, w:wCm, h:hCm, thickMm, qty:0};
+    partsMap[key].qty += qty;
+  }
+  return { addPart, get:()=>Object.values(partsMap) };
+}
+
+/** Wzory frontów: uchylne (bok/góra) vs przesuwne. Wymiary w cm. */
+const DOOR = {
+  hingeGap: 0.3,       // 3 mm między skrzydłami uchylnymi
+  slideOverlap: 2.5,   // 25 mm nakładka skrzydeł przesuwnych
+  slideClearance: 0.5  // 5 mm luz wysokości pod prowadnicę
+};
+
+function effectiveLeaves(doorType, leaves){
+  return doorType === 'przesuwne' ? 2 : leaves;
+}
+
+function addDoorFronts(pm, {doorType, leaves, opening, H, t, qtySections, nameBase}){
+  if(doorType === 'brak') return;
+  const L = effectiveLeaves(doorType, leaves);
+  if(doorType === 'przesuwne'){
+    const leafW = (opening + DOOR.slideOverlap) / 2;
+    const doorH = Math.max(H - DOOR.slideClearance, 0.1);
+    pm.addPart(nameBase + ' przesuwny (skrzydło)', leafW, doorH, t*10, qtySections * 2);
+    return;
+  }
+  // uchylne (bok) / uchylne do góry — zakładka na bok = t
+  if(L === 1){
+    pm.addPart(nameBase, opening + t, H, t*10, qtySections);
+  } else {
+    const leafW = (opening + t - DOOR.hingeGap) / 2;
+    pm.addPart(nameBase + ' (skrzydło)', leafW, H, t*10, qtySections * 2);
+  }
+}
+
+// Pure builder — one linear (multi-section) carcass. No DOM reads.
+function buildLinearParts({W,H,D,N,t,backT,shelvesPer,doorType,leaves,skipBack,panelMode,panelHeight,panelThick}){
+  const pm = makePartsMap();
+  const uprights = N + 1;
+  const sectionOpening = (W - uprights*t) / N;
+
+  pm.addPart('Bok / przegroda pionowa', D, H, t*10, uprights);
+  pm.addPart('Wieniec (góra/dół)', sectionOpening, D, t*10, N*2);
+
+  if(shelvesPer > 0){
+    pm.addPart('Półka', Math.max(sectionOpening-0.2,0.1), Math.max(D-0.1,0.1), t*10, shelvesPer*N);
+  }
+
+  if(panelMode){
+    pm.addPart('Płyta montażowa (pełna wysokość)', W, panelHeight, panelThick*10, 1);
+  } else if(!skipBack){
+    pm.addPart('Plecy (HDF)', W, H, backT*10, 1);
+  }
+
+  if(doorType !== 'brak' && !skipBack){
+    addDoorFronts(pm, {doorType, leaves, opening:sectionOpening, H, t, qtySections:N, nameBase:'Front / drzwi'});
+  }
+
+  return { isCorner:false, W,H,D,N,shelvesPer,t,backT, sectionOpening, uprights,
+    panelMode, panelHeight, panelThick, doorType, leaves: effectiveLeaves(doorType, leaves), parts: pm.get() };
+}
+
+// Pure builder — one corner (narożna) carcass. No DOM reads.
+function buildCornerParts({armA,armB,H,D,t,backT,shelvesPer,doorType,leaves}){
+  const pm = makePartsMap();
+  const openingA = Math.max(armA - 2*t, 0.1);
+  const openingB = Math.max(armB - 2*t, 0.1);
+
+  pm.addPart('Bok / słupek narożny', D, H, t*10, 3);
+  pm.addPart('Wieniec ramię A (góra/dół)', openingA, D, t*10, 2);
+  pm.addPart('Wieniec ramię B (góra/dół)', openingB, D, t*10, 2);
+
+  if(shelvesPer > 0){
+    pm.addPart('Półka ramię A', Math.max(openingA-0.2,0.1), Math.max(D-0.1,0.1), t*10, shelvesPer);
+    pm.addPart('Półka ramię B', Math.max(openingB-0.2,0.1), Math.max(D-0.1,0.1), t*10, shelvesPer);
+  }
+
+  pm.addPart('Plecy ramię A (HDF)', armA, H, backT*10, 1);
+  pm.addPart('Plecy ramię B (HDF)', armB, H, backT*10, 1);
+
+  if(doorType !== 'brak'){
+    addDoorFronts(pm, {doorType, leaves, opening:openingA, H, t, qtySections:1, nameBase:'Front ramię A'});
+    addDoorFronts(pm, {doorType, leaves, opening:openingB, H, t, qtySections:1, nameBase:'Front ramię B'});
+  }
+
+  return { isCorner:true, armA, armB, H, D, t, backT, openingA, openingB, shelvesPer,
+    doorType, leaves: effectiveLeaves(doorType, leaves), parts: pm.get() };
+}
+
+// Reads DOM + state for "pojedynczy mebel" mode.
+function computeParts(){
+  const errEl = document.getElementById('dimError');
+  const isCorner = state.type === 'naroznik';
+  const H = parseFloat(document.getElementById('h').value);
+  const D = parseFloat(document.getElementById('d').value);
+  const shelvesPer = Math.max(0, parseInt(document.getElementById('shelves').value) || 0);
+  const t = (parseFloat(document.getElementById('thick').value) || 18) / 10; // mm -> cm
+  const backT = (parseFloat(document.getElementById('back').value) || 3) / 10;
+
+  if(isCorner){
+    const armA = parseFloat(document.getElementById('armA').value);
+    const armB = parseFloat(document.getElementById('armB').value);
+    if(!armA || !armB || !H || !D || armA<=0 || armB<=0 || H<=0 || D<=0){
+      errEl.classList.add('show');
+      return null;
+    }
+    errEl.classList.remove('show');
+    return buildCornerParts({armA,armB,H,D,t,backT,shelvesPer,doorType:state.door,leaves:state.leaves});
+  }
+
+  const W = parseFloat(document.getElementById('w').value);
+  const N = Math.max(1, parseInt(document.getElementById('sections').value) || 1);
+  const panelMode = !!state.panel;
+  const panelHeight = parseFloat(document.getElementById('panelHeight').value);
+  const panelThick = (parseFloat(document.getElementById('panelThick').value) || 18) / 10;
+
+  if(!W || !H || !D || W<=0 || H<=0 || D<=0 || (panelMode && (!panelHeight || panelHeight < H))){
+    errEl.classList.add('show');
+    return null;
+  }
+  errEl.classList.remove('show');
+
+  return buildLinearParts({W,H,D,N,t,backT,shelvesPer,
+    doorType:state.door, leaves:state.leaves, skipBack: state.type==='regal',
+    panelMode, panelHeight, panelThick});
+}
+
+// Reads DOM + state for "cała zabudowa" mode: auto-sizes modules to fill available width.
+function computeZabudowa(){
+  const errEl = document.getElementById('dimError');
+  const availW = parseFloat(document.getElementById('w').value);
+  const H = parseFloat(document.getElementById('h').value);
+  const D = parseFloat(document.getElementById('d').value);
+  const shelvesPer = Math.max(0, parseInt(document.getElementById('shelves').value) || 0);
+  const t = (parseFloat(document.getElementById('thick').value) || 18) / 10;
+  const backT = (parseFloat(document.getElementById('back').value) || 3) / 10;
+  const modWidth = parseFloat(document.getElementById('modWidth').value);
+  const panelMode = !!state.panel;
+  const panelHeight = parseFloat(document.getElementById('panelHeight').value);
+  const panelThick = (parseFloat(document.getElementById('panelThick').value) || 18) / 10;
+
+  if(!availW || !H || !D || !modWidth || availW<=0 || H<=0 || D<=0 || modWidth<=0){
+    errEl.classList.add('show');
+    return null;
+  }
+
+  if(state.layout === 'rzad_naroznik'){
+    const cornerSize = Math.min(Math.max(modWidth, D+15), availW*0.6);
+    const remainingW = availW - cornerSize;
+    const corner = buildCornerParts({armA:cornerSize, armB:cornerSize, H, D, t, backT, shelvesPer,
+      doorType:state.door, leaves:state.leaves});
+
+    let rowN = 0, rowModWidth = 0, rowParts = [];
+    const minRow = Math.max(30, D+2*t*10*0 + 20); // sensible minimum module width
+    if(remainingW >= minRow){
+      rowN = Math.max(1, Math.min(10, Math.round(remainingW/modWidth)));
+      const row = buildLinearParts({W:remainingW, H, D, N:rowN, t, backT, shelvesPer,
+        doorType:state.door, leaves:state.leaves, skipBack:false,
+        panelMode:false, panelHeight:0, panelThick:0});
+      rowModWidth = remainingW / rowN;
+      rowParts = row.parts;
+    }
+    errEl.classList.remove('show');
+    return { isCorner:true, isZabudowa:true, zLayout:'rzad_naroznik',
+      armA:availW, armB:cornerSize, cornerSize, rowN, rowModWidth, remainingW,
+      H, D, t, backT, shelvesPer,
+      parts: corner.parts.concat(rowParts) };
+  }
+
+  const N = Math.max(1, Math.min(10, Math.round(availW/modWidth)));
+  if(panelMode && (!panelHeight || panelHeight < H)){
+    errEl.classList.add('show');
+    return null;
+  }
+  errEl.classList.remove('show');
+
+  const lin = buildLinearParts({W:availW, H, D, N, t, backT, shelvesPer,
+    doorType:state.door, leaves:state.leaves, skipBack:false,
+    panelMode, panelHeight, panelThick});
+
+  return { ...lin, isZabudowa:true, zLayout:state.layout, moduleCount:N, modWidth: availW/N };
+}
+
+function getActiveData(){
+  return state.mode === 'zabudowa' ? computeZabudowa() : computeParts();
+}
+
+function showDimWarn(messages){
+  const el = document.getElementById('dimWarn');
+  if(!messages || !messages.length){
+    el.classList.remove('show');
+    el.textContent = '';
+    return;
+  }
+  el.innerHTML = messages.map(m => '• ' + m).join('<br>');
+  el.classList.add('show');
+}
+
+/** Ostrzeżenia sensowności (nie blokują renderu — tylko informują). */
+function collectSanityWarnings(data){
+  if(!data) return [];
+  const w = [];
+  const t = data.t;
+  const H = data.H;
+  const D = data.D;
+  const shelvesPer = data.shelvesPer || 0;
+
+  if(D < 15) w.push('Głębokość poniżej 15 cm — konstrukcja może być niestabilna / trudna w użytkowaniu.');
+  if(H < 20) w.push('Wysokość poniżej 20 cm — sprawdź, czy to zamierzony wymiar.');
+
+  if(!data.isCorner && data.sectionOpening != null){
+    if(data.sectionOpening < 15) w.push('Światło sekcji poniżej 15 cm — fronty i półki będą praktycznie bezużyteczne.');
+    if(data.sectionOpening < 2*t + 5) w.push('Sekcja zbyt wąska względem grubości płyty — zweryfikuj liczbę sekcji / szerokość.');
+    if(state.door === 'przesuwne' && data.sectionOpening < 40) w.push('Dla drzwi przesuwnych zalecane światło sekcji ≥ 40 cm (2 skrzydła + nakładka).');
+  }
+
+  if(data.isCorner){
+    if(data.openingA < 15 || data.openingB < 15) w.push('Jedno z ramion ma bardzo małe światło wewnętrzne (< 15 cm).');
+    if(state.door === 'przesuwne' && (data.openingA < 40 || data.openingB < 40)){
+      w.push('Przesuwne na narożniku: co najmniej jedno ramię ma światło < 40 cm.');
+    }
+  }
+
+  if(shelvesPer > 0 && H / (shelvesPer + 1) < 12){
+    w.push('Odstęp między półkami poniżej ok. 12 cm — rozważ mniej półek lub większą wysokość.');
+  }
+
+  if(data.panelMode && data.panelHeight - H < 10){
+    w.push('„Wolna” część płyty montażowej ma mniej niż 10 cm — efekt wizualny będzie minimalny.');
+  }
+
+  if(data.isZabudowa && data.moduleCount != null && data.modWidth < 35){
+    w.push('Auto-dobór dał moduły węższe niż 35 cm — zwiększ preferowaną szerokość lub zmniejsz dostępną szerokość / liczbę.');
+  }
+
+  return w;
+}
+
+function updateDoorLeavesUI(){
+  const sliding = state.door === 'przesuwne';
+  const leavesField = document.getElementById('leavesField');
+  const hint = document.getElementById('slidingHint');
+  leavesField.style.display = state.door === 'brak' ? 'none' : 'block';
+  hint.style.display = sliding ? 'block' : 'none';
+
+  const btn1 = document.querySelector('#leavesGroup button[data-val="1"]');
+  const btn2 = document.querySelector('#leavesGroup button[data-val="2"]');
+  if(sliding){
+    state.leaves = 2;
+    btn1.disabled = true;
+    btn1.classList.remove('active');
+    btn2.disabled = false;
+    btn2.classList.add('active');
+  } else {
+    btn1.disabled = false;
+    btn2.disabled = false;
+  }
+}
+
+function renderSVG(data){
+  const host = document.getElementById('svgHost');
+  const legend = document.getElementById('legend');
+  if(!data){ host.innerHTML=''; return; }
+  if(data.isCorner){
+    legend.innerHTML = `
+      <span><span class="swatch" style="background:#3E6E8E;"></span>Boki / słupek narożny</span>
+      <span><span class="swatch" style="background:var(--accent);"></span>Linia frontu</span>
+      <span><span class="swatch" style="background:#7FDBFF;"></span>Wymiar</span>`;
+    host.innerHTML = renderCornerSVG(data);
+  } else {
+    legend.innerHTML = `
+      <span><span class="swatch" style="background:#3E6E8E;"></span>Korpus (boki / wieńce)</span>
+      <span><span class="swatch" style="background:var(--accent);"></span>Front / drzwi</span>
+      <span><span class="swatch" style="background:#7FDBFF;"></span>Wymiar</span>`;
+    host.innerHTML = renderLinearSVG(data);
+  }
+}
+
+function renderLinearSVG(data){
+  const {W,H,D,N,shelvesPer,t,uprights,sectionOpening,panelMode,panelHeight} = data;
+
+  const padL=70, padR=40, padT=30, padB=60;
+  const maxW=560, maxH=300;
+  const totalH = panelMode ? panelHeight : H;
+  const scale = Math.min(maxW/W, maxH/totalH);
+  const drawW = W*scale;
+  const cabH = H*scale;
+  const totalDrawH = totalH*scale;
+  const originX = padL, originY = padT;
+  const svgW = drawW + padL + padR;
+  const svgH = totalDrawH + padT + padB + 70; // extra for side view
+
+  let s = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" role="img">
+  <title>Rysunek poglądowy mebla</title>
+  <desc>Widok z przodu ${fmt(W)} na ${fmt(H)} cm, ${N} sekcji, oraz przekrój głębokości ${fmt(D)} cm.</desc>`;
+
+  // full mounting panel (drawn first, behind cabinet) if panel mode
+  if(panelMode){
+    s += `<rect x="${originX}" y="${originY}" width="${drawW}" height="${totalDrawH}" fill="none" stroke="#5F86A3" stroke-width="1" stroke-dasharray="3 3"/>`;
+    const freeY = originY + cabH;
+    const freeH = totalDrawH - cabH;
+    if(freeH > 10){
+      s += `<text x="${originX+drawW/2}" y="${freeY+freeH/2}" text-anchor="middle" dominant-baseline="central" font-family="Inter" font-size="11" fill="#5F86A3">wolna płyta</text>`;
+    }
+  }
+
+  // outer cabinet frame (upper portion)
+  s += `<rect x="${originX}" y="${originY}" width="${drawW}" height="${cabH}" fill="none" stroke="#3E6E8E" stroke-width="1.5"/>`;
+
+  const tPx = Math.max(t*scale, 1.5);
+  for(let i=0;i<uprights;i++){
+    const x = originX + i*(sectionOpening+t)*scale;
+    s += `<rect x="${x}" y="${originY}" width="${tPx}" height="${cabH}" fill="#3E6E8E" opacity="0.55"/>`;
+  }
+
+  if(shelvesPer>0){
+    for(let sec=0; sec<N; sec++){
+      const secX = originX + sec*(sectionOpening+t)*scale + tPx;
+      const secW = sectionOpening*scale;
+      for(let k=1;k<=shelvesPer;k++){
+        const y = originY + (cabH*k)/(shelvesPer+1);
+        s += `<line x1="${secX}" y1="${y}" x2="${secX+secW}" y2="${y}" stroke="#3E6E8E" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>`;
+      }
+    }
+  }
+
+  if(state.door!=='brak' && state.type!=='regal'){
+    const doorLeaves = effectiveLeaves(state.door, state.leaves);
+    for(let sec=0; sec<N; sec++){
+      const secX = originX + sec*(sectionOpening+t)*scale;
+      const secW = (sectionOpening+t)*scale;
+      if(doorLeaves===2){
+        s += `<line x1="${secX+secW/2}" y1="${originY}" x2="${secX+secW/2}" y2="${originY+cabH}" stroke="#FF7A45" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+      }
+      s += `<rect x="${secX+2}" y="${originY+2}" width="${secW-4}" height="${cabH-4}" fill="none" stroke="#FF7A45" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    }
+    if(state.door==='gora'){
+      s += `<text class="ts" x="${originX+drawW/2}" y="${originY+cabH+16}" text-anchor="middle" font-family="Inter" font-size="11" fill="#9FB8CC">↑ front uchylny do góry</text>`;
+    } else if(state.door==='przesuwne'){
+      s += `<text class="ts" x="${originX+drawW/2}" y="${originY+cabH+16}" text-anchor="middle" font-family="Inter" font-size="11" fill="#9FB8CC">↔ drzwi przesuwne (2 skrzydła, nakładka ${fmt(DOOR.slideOverlap*10)} mm)</text>`;
+    }
+  }
+
+  // width dimension (top)
+  const dimY = originY - 14;
+  s += `<line x1="${originX}" y1="${dimY}" x2="${originX+drawW}" y2="${dimY}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<line x1="${originX}" y1="${dimY-4}" x2="${originX}" y2="${dimY+4}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<line x1="${originX+drawW}" y1="${dimY-4}" x2="${originX+drawW}" y2="${dimY+4}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<text x="${originX+drawW/2}" y="${dimY-6}" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#7FDBFF">${fmt(W)} cm</text>`;
+
+  // cabinet height dimension (left, only cabinet portion)
+  const dimX = originX - 16;
+  s += `<line x1="${dimX}" y1="${originY}" x2="${dimX}" y2="${originY+cabH}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<line x1="${dimX-4}" y1="${originY}" x2="${dimX+4}" y2="${originY}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<line x1="${dimX-4}" y1="${originY+cabH}" x2="${dimX+4}" y2="${originY+cabH}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<text x="${dimX-8}" y="${originY+cabH/2}" text-anchor="end" dominant-baseline="central" font-family="JetBrains Mono" font-size="11" fill="#7FDBFF">${fmt(H)} cm</text>`;
+
+  // total panel height dimension (further left, only if panel mode)
+  if(panelMode){
+    const dimX2 = originX - 40;
+    s += `<line x1="${dimX2}" y1="${originY}" x2="${dimX2}" y2="${originY+totalDrawH}" stroke="#5F86A3" stroke-width="1"/>`;
+    s += `<line x1="${dimX2-4}" y1="${originY}" x2="${dimX2+4}" y2="${originY}" stroke="#5F86A3" stroke-width="1"/>`;
+    s += `<line x1="${dimX2-4}" y1="${originY+totalDrawH}" x2="${dimX2+4}" y2="${originY+totalDrawH}" stroke="#5F86A3" stroke-width="1"/>`;
+    s += `<text x="${dimX2-8}" y="${originY+totalDrawH/2}" text-anchor="end" dominant-baseline="central" font-family="JetBrains Mono" font-size="11" fill="#5F86A3">${fmt(panelHeight)} cm</text>`;
+  }
+
+  // side/plan view (depth)
+  const sideY = originY + totalDrawH + 44;
+  const sideScale = Math.min(160/D, 20);
+  const sideW = D*sideScale;
+  const sideH = 18;
+  const sideX = originX;
+  s += `<text x="${sideX}" y="${sideY-8}" font-family="Inter" font-size="11" fill="#9FB8CC">Widok z góry (głębokość)</text>`;
+  s += `<rect x="${sideX}" y="${sideY}" width="${sideW}" height="${sideH}" fill="none" stroke="#3E6E8E" stroke-width="1.5"/>`;
+  s += `<rect x="${sideX}" y="${sideY}" width="${Math.max(tPx,2)}" height="${sideH}" fill="#3E6E8E" opacity="0.6"/>`;
+  if(state.door!=='brak' && state.type!=='regal'){
+    s += `<rect x="${sideX+sideW-3}" y="${sideY}" width="3" height="${sideH}" fill="#FF7A45"/>`;
+  }
+  s += `<line x1="${sideX}" y1="${sideY+sideH+10}" x2="${sideX+sideW}" y2="${sideY+sideH+10}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<text x="${sideX+sideW/2}" y="${sideY+sideH+24}" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#7FDBFF">${fmt(D)} cm</text>`;
+
+  s += `</svg>`;
+  return s;
+}
+
+function renderCornerSVG(data){
+  const {armA,armB,D,H} = data;
+  const padL=80, padR=40, padT=30, padB=50;
+  const maxW=480, maxH=340;
+  const scale = Math.min(maxW/armA, maxH/armB);
+  const oX = armA*scale, oY = armB*scale; // bounding size in px
+  const originX = padL, originY = padT;
+  const svgW = oX + padL + padR;
+  const svgH = oY + padT + padB;
+
+  const dPx = D*scale;
+
+  let s = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" role="img">
+  <title>Rzut z góry szafki narożnej</title>
+  <desc>Ramię A ${fmt(armA)} cm, ramię B ${fmt(armB)} cm, głębokość ${fmt(D)} cm, wysokość ${fmt(H)} cm.</desc>`;
+
+  // single L-shaped footprint (one path, no overlapping fills)
+  const Lpath = `M ${originX} ${originY}
+    L ${originX+oX} ${originY}
+    L ${originX+oX} ${originY+dPx}
+    L ${originX+dPx} ${originY+dPx}
+    L ${originX+dPx} ${originY+oY}
+    L ${originX} ${originY+oY} Z`;
+  s += `<path d="${Lpath}" fill="#3E6E8E" fill-opacity="0.22" stroke="#3E6E8E" stroke-width="1.5"/>`;
+
+  // corner post callout (D x D), stroke only — this is shared material, not a door
+  s += `<rect x="${originX}" y="${originY}" width="${dPx}" height="${dPx}" fill="none" stroke="#7FDBFF" stroke-width="1" stroke-dasharray="3 3"/>`;
+
+  // walls (thick lines at x=0 and y=0)
+  s += `<line x1="${originX}" y1="${originY}" x2="${originX}" y2="${originY+oY}" stroke="#5F86A3" stroke-width="3"/>`;
+  s += `<line x1="${originX}" y1="${originY}" x2="${originX+oX}" y2="${originY}" stroke="#5F86A3" stroke-width="3"/>`;
+
+  // door faces — only the open run beyond the shared corner post, not through it
+  if(state.door !== 'brak'){
+    // vertical leg door: x = D, y from D to armB
+    s += `<line x1="${originX+dPx}" y1="${originY+dPx}" x2="${originX+dPx}" y2="${originY+oY}" stroke="#FF7A45" stroke-width="3"/>`;
+    // horizontal leg door: y = D, x from D to armA
+    s += `<line x1="${originX+dPx}" y1="${originY+dPx}" x2="${originX+oX}" y2="${originY+dPx}" stroke="#FF7A45" stroke-width="3"/>`;
+    if(effectiveLeaves(state.door, state.leaves)===2){
+      const midV = originY + dPx + (oY-dPx)/2;
+      const midH = originX + dPx + (oX-dPx)/2;
+      s += `<line x1="${originX+dPx-3}" y1="${midV}" x2="${originX+dPx+3}" y2="${midV}" stroke="#FF7A45" stroke-width="1.5"/>`;
+      s += `<line x1="${midH}" y1="${originY+dPx-3}" x2="${midH}" y2="${originY+dPx+3}" stroke="#FF7A45" stroke-width="1.5"/>`;
+    }
+    if(state.door === 'przesuwne'){
+      s += `<text x="${originX+oX/2}" y="${originY+oY+42}" text-anchor="middle" font-family="Inter" font-size="11" fill="#9FB8CC">↔ przesuwne na obu ramionach</text>`;
+    }
+  }
+
+  // armA dimension (bottom)
+  const dimY = originY + oY + 16;
+  s += `<line x1="${originX}" y1="${dimY}" x2="${originX+oX}" y2="${dimY}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<text x="${originX+oX/2}" y="${dimY+16}" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#7FDBFF">Ramię A: ${fmt(armA)} cm</text>`;
+
+  // armB dimension (left)
+  const dimX = originX - 20;
+  s += `<line x1="${dimX}" y1="${originY}" x2="${dimX}" y2="${originY+oY}" stroke="#7FDBFF" stroke-width="1"/>`;
+  s += `<text x="${dimX-8}" y="${originY+oY/2}" text-anchor="end" dominant-baseline="central" font-family="JetBrains Mono" font-size="11" fill="#7FDBFF">Ramię B: ${fmt(armB)} cm</text>`;
+
+  // depth label near corner post
+  s += `<text x="${originX+dPx/2}" y="${originY+dPx/2}" text-anchor="middle" dominant-baseline="central" font-family="Inter" font-size="9" fill="#7FDBFF">gł. ${fmt(D)}</text>`;
+
+  // height note
+  s += `<text x="${originX+oX/2}" y="${originY-12}" text-anchor="middle" font-family="Inter" font-size="11" fill="#9FB8CC">Wysokość obu ramion: ${fmt(H)} cm</text>`;
+
+  s += `</svg>`;
+  return s;
+}
+
+function renderTable(data){
+  const body = document.getElementById('partsBody');
+  const summary = document.getElementById('summaryBar');
+  if(!data){ body.innerHTML=''; summary.innerHTML=''; return; }
+
+  let totalPieces = 0;
+  let rows = '';
+  data.parts.forEach(p=>{
+    totalPieces += p.qty;
+    rows += `<tr>
+      <td>${p.name}</td>
+      <td class="mono">${fmt(p.w*10)} × ${fmt(p.h*10)}</td>
+      <td class="mono">${p.thickMm} mm</td>
+      <td class="qty">${p.qty}</td>
+    </tr>`;
+  });
+  body.innerHTML = rows;
+
+  const distinctTypes = data.parts.length;
+  let thirdStat;
+  if(data.isZabudowa && data.zLayout === 'rzad_naroznik'){
+    thirdStat = `<div class="stat"><div class="v">${(data.rowN||0)+1}</div><div class="l">moduły (narożnik+rząd)</div></div>`;
+  } else if(data.isZabudowa){
+    thirdStat = `<div class="stat"><div class="v">${data.moduleCount || data.N}</div><div class="l">moduły auto</div></div>`;
+  } else if(data.isCorner){
+    thirdStat = `<div class="stat"><div class="v">2</div><div class="l">ramiona</div></div>`;
+  } else {
+    thirdStat = `<div class="stat"><div class="v">${data.N}</div><div class="l">${data.N===1?'sekcja':'sekcje'}</div></div>`;
+  }
+  summary.innerHTML = `
+    <div class="stat"><div class="v">${totalPieces}</div><div class="l">elementów łącznie</div></div>
+    <div class="stat"><div class="v">${distinctTypes}</div><div class="l">rodzajów płyt</div></div>
+    ${thirdStat}
+  `;
+}
+
+function sideHoles(D_mm, H_mm, t_mm, shelvesPer){
+  const rows = [t_mm/2];
+  for(let k=1; k<=shelvesPer; k++) rows.push(H_mm*k/(shelvesPer+1));
+  rows.push(H_mm - t_mm/2);
+  const off = Math.min(37, D_mm*0.28);
+  const pts = [];
+  rows.forEach(y=>{ pts.push({x:off, y}); pts.push({x:D_mm-off, y}); });
+  return pts;
+}
+
+function perimeterHoles(wMm, hMm, margin=10, spacing=180){
+  const pts = [];
+  const nx = Math.max(2, Math.round((wMm-2*margin)/spacing)+1);
+  for(let i=0;i<nx;i++){
+    const x = margin + (wMm-2*margin)*i/(nx-1);
+    pts.push({x, y:margin});
+    pts.push({x, y:hMm-margin});
+  }
+  const ny = Math.max(2, Math.round((hMm-2*margin)/spacing)+1);
+  for(let i=1;i<ny-1;i++){
+    const y = margin + (hMm-2*margin)*i/(ny-1);
+    pts.push({x:margin, y});
+    pts.push({x:wMm-margin, y});
+  }
+  return pts;
+}
+
+function getHoles(part, data){
+  if(/^Bok|słupek/.test(part.name)){
+    return sideHoles(part.w*10, part.h*10, data.t*10, data.shelvesPer);
+  }
+  if(/Plecy|Płyta montażowa/.test(part.name)){
+    return perimeterHoles(part.w*10, part.h*10);
+  }
+  return [];
+}
+
+function drawPartDiagram(doc, part, holes, x0, y0, boxW, boxH){
+  const wMm = part.w*10, hMm = part.h*10;
+  const scale = Math.min(boxW/wMm, boxH/hMm);
+  const dW = wMm*scale, dH = hMm*scale;
+  doc.setDrawColor(90,90,90);
+  doc.setLineWidth(0.3);
+  doc.rect(x0, y0, dW, dH);
+  doc.setFillColor(217,87,45);
+  holes.forEach(h=>{
+    doc.circle(x0 + h.x*scale, y0 + h.y*scale, 0.7, 'F');
+  });
+  doc.setFontSize(8);
+  doc.setTextColor(50,50,50);
+  doc.text(`${part.name}`, x0, y0+dH+4.5);
+  doc.setFontSize(7.3);
+  doc.setTextColor(100,100,100);
+  doc.text(`${fmt(wMm)} x ${fmt(hMm)} mm, gr. ${part.thickMm} mm, szt. ${part.qty}, otw.: ${holes.length}`, x0, y0+dH+8.5);
+  return dH + 13;
+}
+
+function showPdfStatus(msg, isError){
+  const el = document.getElementById('pdfStatus');
+  if(!msg){ el.classList.remove('show'); el.textContent=''; return; }
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--cyan)';
+  el.classList.add('show');
+}
+
+function generatePDF(){
+  showPdfStatus('', false);
+
+  if(typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF){
+    showPdfStatus('Nie udało się załadować biblioteki PDF — sprawdź połączenie z internetem i spróbuj ponownie.', true);
+    return;
+  }
+
+  const data = getActiveData();
+  if(!data){
+    showPdfStatus('Uzupełnij poprawnie wymiary przed eksportem do PDF.', true);
+    return;
+  }
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4'});
+    const pageW = 210, pageH = 297, margin = 16;
+    let y = margin;
+
+  const typeLabel = data.isZabudowa
+    ? ({wiszaca:'Zabudowa — rząd wiszących', stojaca:'Zabudowa — rząd stojących', rzad_naroznik:'Zabudowa — rząd + narożna'}[data.zLayout] || 'Zabudowa')
+    : {wiszaca:'Szafka wisząca', stojaca:'Szafka stojąca', regal:'Regał otwarty', naroznik:'Szafka narożna'}[state.type];
+  const doorLabel = {brak:'brak', uchylne:'uchylne (bok)', gora:'uchylne do góry', przesuwne:'przesuwne'}[state.door];
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Lista rozkroju — dla stolarni', margin, y); y+=8;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text(`Typ mebla: ${typeLabel}    Data: ${new Date().toLocaleDateString('pl-PL')}`, margin, y); y+=6;
+
+  let dimsLine;
+  if(data.isCorner){
+    dimsLine = `Ramię A: ${fmt(data.armA)} cm   Ramię B: ${fmt(data.armB)} cm   Wysokość: ${fmt(data.H)} cm   Głębokość: ${fmt(data.D)} cm`;
+  } else {
+    dimsLine = `Szerokość: ${fmt(data.W)} cm   Wysokość: ${fmt(data.H)} cm   Głębokość: ${fmt(data.D)} cm   Sekcje: ${data.N}`;
+    if(data.panelMode) dimsLine += `   Płyta montażowa: wys. ${fmt(data.panelHeight)} cm`;
+  }
+  doc.text(dimsLine, margin, y); y+=6;
+  doc.text(`Grubość płyty: ${data.t*10} mm    Grubość pleców: ${data.backT*10} mm    Drzwi: ${doorLabel}`, margin, y); y+=10;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  const col = { lp:margin, name:margin+12, dim:margin+92, thick:margin+138, qty:margin+168 };
+  doc.text('Lp', col.lp, y);
+  doc.text('Element', col.name, y);
+  doc.text('Wymiary (mm)', col.dim, y);
+  doc.text('Grubość', col.thick, y);
+  doc.text('Ilość', col.qty, y);
+  y += 2; doc.setLineWidth(0.3); doc.line(margin, y, pageW-margin, y); y += 5;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  let totalQty = 0;
+  data.parts.forEach((p,i)=>{
+    if(y > pageH-margin){ doc.addPage(); y = margin; }
+    totalQty += p.qty;
+    doc.text(String(i+1), col.lp, y);
+    doc.text(p.name, col.name, y);
+    doc.text(`${fmt(p.w*10)} x ${fmt(p.h*10)}`, col.dim, y);
+    doc.text(`${p.thickMm} mm`, col.thick, y);
+    doc.text(String(p.qty), col.qty, y);
+    y += 6;
+  });
+  y += 2; doc.setLineWidth(0.2); doc.line(margin, y, pageW-margin, y); y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text(`Razem elementów: ${totalQty}`, margin, y); y += 12;
+
+  // Drilling diagrams
+  const holeParts = data.parts.filter(p => /^Bok|słupek|Plecy|Płyta montażowa/.test(p.name));
+  if(holeParts.length){
+    if(y > pageH-40){ doc.addPage(); y = margin; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text('Miejsca wiercenia pod wkręty', margin, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text('Otwory pilotujące ok. fi 3-4 mm (kropka = punkt wiercenia). Rozstaw poglądowy - dopasuj do wybranych łączników i grubości płyty.', margin, y); y += 8;
+
+    const boxW = 65, boxH = 45, gap = 12;
+    let colX = margin;
+    let rowMaxH = 0;
+    holeParts.forEach(p=>{
+      const holes = getHoles(p, data);
+      if(colX + boxW > pageW-margin){
+        colX = margin;
+        y += rowMaxH + gap;
+        rowMaxH = 0;
+      }
+      if(y + boxH + 15 > pageH-margin){
+        doc.addPage(); y = margin; colX = margin; rowMaxH = 0;
+      }
+      const used = drawPartDiagram(doc, p, holes, colX, y, boxW, boxH);
+      rowMaxH = Math.max(rowMaxH, used);
+      colX += boxW + gap;
+    });
+  }
+
+  doc.save('lista-rozkroju.pdf');
+  showPdfStatus('PDF zapisany.', false);
+  } catch(e){
+    showPdfStatus('Błąd podczas generowania PDF: ' + e.message, true);
+  }
+}
+
+document.getElementById('pdfBtn').addEventListener('click', generatePDF);
+
+const FIELD_IDS = ['w','h','d','sections','shelves','thick','back','armA','armB','panelHeight','panelThick','modWidth'];
+
+function collectConfig(){
+  const fields = {};
+  FIELD_IDS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) fields[id] = el.value;
+  });
+  return {
+    v: 1,
+    state: { mode:state.mode, type:state.type, layout:state.layout, door:state.door, leaves:state.leaves, panel:state.panel },
+    fields
+  };
+}
+
+function setToggleActive(groupId, value){
+  const group = document.getElementById(groupId);
+  if(!group) return;
+  group.querySelectorAll('button').forEach(btn=>{
+    const v = isNaN(btn.dataset.val) ? btn.dataset.val : Number(btn.dataset.val);
+    const match = String(v) === String(value);
+    btn.classList.toggle('active', match);
+  });
+}
+
+function applyConfig(cfg, {silent}={}){
+  if(!cfg || !cfg.state || !cfg.fields) throw new Error('Nieprawidłowy plik konfiguracji');
+  Object.assign(state, {
+    mode: cfg.state.mode || 'single',
+    type: cfg.state.type || 'wiszaca',
+    layout: cfg.state.layout || 'wiszaca',
+    door: cfg.state.door || 'uchylne',
+    leaves: cfg.state.leaves != null ? Number(cfg.state.leaves) : 1,
+    panel: cfg.state.panel != null ? Number(cfg.state.panel) : 0
+  });
+  FIELD_IDS.forEach(id=>{
+    if(cfg.fields[id] != null && document.getElementById(id)){
+      document.getElementById(id).value = cfg.fields[id];
+    }
+  });
+  setToggleActive('modeGroup', state.mode);
+  setToggleActive('typeGroup', state.type);
+  setToggleActive('layoutGroup', state.layout);
+  setToggleActive('doorGroup', state.door);
+  setToggleActive('leavesGroup', state.leaves);
+  setToggleActive('panelGroup', state.panel);
+  updateFormUI();
+  updateDoorLeavesUI();
+  render({skipUrl:true});
+  if(!silent) setPersistStatus('Wczytano konfigurację.');
+}
+
+function configToQuery(cfg){
+  const p = new URLSearchParams();
+  p.set('v', String(cfg.v||1));
+  Object.entries(cfg.state).forEach(([k,v])=> p.set(k, String(v)));
+  Object.entries(cfg.fields).forEach(([k,v])=> p.set(k, String(v)));
+  return p.toString();
+}
+
+function configFromQuery(search){
+  const p = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  if(!p.has('v') && !p.has('mode') && !p.has('w')) return null;
+  const st = {
+    mode: p.get('mode') || 'single',
+    type: p.get('type') || 'wiszaca',
+    layout: p.get('layout') || 'wiszaca',
+    door: p.get('door') || 'uchylne',
+    leaves: Number(p.get('leaves') || 1),
+    panel: Number(p.get('panel') || 0)
+  };
+  const fields = {};
+  FIELD_IDS.forEach(id=>{
+    if(p.has(id)) fields[id] = p.get(id);
+  });
+  return { v: Number(p.get('v')||1), state: st, fields };
+}
+
+let _urlSyncTimer = null;
+function syncUrlFromState(){
+  clearTimeout(_urlSyncTimer);
+  _urlSyncTimer = setTimeout(()=>{
+    const q = configToQuery(collectConfig());
+    history.replaceState(null, '', location.pathname + '?' + q);
+  }, 200);
+}
+
+function setPersistStatus(msg){
+  const el = document.getElementById('persistStatus');
+  if(el) el.textContent = msg || '';
+}
+
+document.getElementById('btnCopyLink').addEventListener('click', async ()=>{
+  const link = location.origin + location.pathname + '?' + configToQuery(collectConfig());
+  try{
+    await navigator.clipboard.writeText(link);
+    setPersistStatus('Link skopiowany do schowka.');
+  } catch(e){
+    setPersistStatus(link);
+  }
+});
+
+document.getElementById('btnExportJson').addEventListener('click', ()=>{
+  const cfg = collectConfig();
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'formatka-projekt.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setPersistStatus('Wyeksportowano formatka-projekt.json');
+});
+
+document.getElementById('btnImportJson').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (ev)=>{
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      applyConfig(JSON.parse(reader.result));
+      syncUrlFromState();
+    } catch(e){
+      setPersistStatus('Błąd importu: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+});
+
+function updateZabudowaNote(data){
+  const note = document.getElementById('zabudowaNote');
+  if(!data || !data.isZabudowa){
+    note.style.display = 'none';
+    note.textContent = '';
+    return;
+  }
+  note.style.display = 'block';
+  if(data.zLayout === 'rzad_naroznik'){
+    note.textContent = `Auto-layout: narożnik ok. ${fmt(data.cornerSize)} cm + rząd ${data.rowN||0}× ~${fmt(data.rowModWidth||0)} cm (pozostałe ${fmt(data.remainingW||0)} cm).`;
+  } else {
+    note.textContent = `Auto-layout: ${data.moduleCount} modułów × ${fmt(data.modWidth)} cm (wypełnienie dostępnej szerokości).`;
+  }
+}
+
+function render(opts={}){
+  const data = getActiveData();
+  showDimWarn(collectSanityWarnings(data));
+  updateZabudowaNote(data);
+  renderSVG(data);
+  renderTable(data);
+  if(!opts.skipUrl) syncUrlFromState();
+}
+
+updateFormUI();
+updateDoorLeavesUI();
+(function bootFromUrl(){
+  try{
+    const cfg = configFromQuery(location.search);
+    if(cfg) applyConfig(cfg, {silent:true});
+    else render();
+  } catch(e){
+    render();
+  }
+})();
+
+</script>
+</body>
+</html>
